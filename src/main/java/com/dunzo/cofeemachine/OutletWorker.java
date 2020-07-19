@@ -1,17 +1,40 @@
 package com.dunzo.cofeemachine;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class OutletWorker implements Runnable {
-    public Beverage beverage;
+    //public Beverage beverage;
     private Store store;
     private int outletNumber;
+    public List<Beverage> beverages;
 
-    public OutletWorker(int outletNumber, Store store) {
+    public OutletWorker(Store store,int outletNumber) {
         this.outletNumber = outletNumber;
         this.store = store;
+        beverages = new ArrayList<>();
+
+    }
+
+    public void AddBeverage(Beverage beverage) {
+        synchronized (this) {
+            beverages.add(beverage);
+        }
+    }
+
+    private Beverage RemoveBeverage(){
+        synchronized (this) {
+            Beverage beverage = null;
+            if(beverages.size()!=0) {
+                beverage=beverages.get(0);
+                beverages.remove(0);
+            }
+            return beverage;
+        }
     }
 
     public OutletWorker(Beverage beverage, Store store, int outletNumber) {
-        this.beverage = beverage;
+        //this.beverage = beverage;
         this.store = store;
         this.outletNumber = outletNumber;
     }
@@ -29,10 +52,17 @@ public class OutletWorker implements Runnable {
      */
     @Override
     public void run() {
-        getBeverage();
+        while(true) {
+            Beverage beverage = RemoveBeverage();
+            if(beverage!=null)
+            {
+                getBeverage(beverage);
+            }
+        }
+
 
     }
-    public void getBeverage() {
+    public void getBeverage(Beverage beverage) {
         boolean fulFilled =  store.getIngredients(beverage.getIngredients());
         if(fulFilled) {
             System.out.println(String.format("%s is prepared", beverage.getName()));
